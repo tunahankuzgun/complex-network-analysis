@@ -31,11 +31,12 @@ Kaylin Pavlik). See `data/readme.md` for the full data dictionary.
 | `src/phase1_load_and_clean.py` | Load the CSV, deduplicate tracks (keep each track's most common genre label), select the 9 audio features |
 | `src/phase2_sample.py` | Draw a 2,500-song sample, stratified proportionally by genre |
 | `src/phase3_build_network.py` | Standardize features, build a mutual k-Nearest-Neighbors graph (k=10), weighted by similarity |
-| `src/phase4_descriptive_stats.py` | Degree distribution, density, clustering, connected components, average path length, small-world coefficient |
-| `src/phase4b_visualize_network.py` | Node-link visualization colored by genre |
-| `src/phase5_centrality.py` | Degree, strength, betweenness, closeness, eigenvector, and PageRank centrality; correlation with `track_popularity` |
+| `src/phase4_descriptive_stats.py` | Degree distribution, density, clustering, path length, small-world coefficient, Erdős–Rényi comparison plots |
+| `src/phase4b_visualize_network.py` | Network drawing: edges colored by similarity, plus four layouts |
+| `src/phase5_centrality.py` | All centrality distributions, each vs popularity, correlation heatmaps, genre tables |
 | `src/phase6_community_detection.py` | Louvain community detection vs. true genre labels (NMI, ARI) |
 | `src/phase7_assortativity_robustness.py` | Degree/genre assortativity; robustness under random failure vs. targeted attack |
+| `src/phase8_k_sensitivity.py` | Basic stats for k = 5, 8, 10, 12, 15; within-community analysis for k = 5, 10, 15 |
 
 Full rationale for each design decision (sampling size, k-NN vs. threshold, mutual vs.
 union rule, handling of isolated nodes, etc.) is documented as docstrings/comments in
@@ -53,10 +54,29 @@ python src/phase4b_visualize_network.py
 python src/phase5_centrality.py
 python src/phase6_community_detection.py
 python src/phase7_assortativity_robustness.py
+python src/phase8_k_sensitivity.py
 ```
 
 Each script reads the previous step's output from `data/` and writes its own
 outputs there, plus any figures to `figures/`.
+
+## Extra figures
+
+| Figure | What it shows |
+|---|---|
+| `figures/er_comparison_metrics.png` | Clustering and path length vs an Erdős–Rényi graph with the same size |
+| `figures/er_degree_distribution.png` | Degree distribution overlaid on Erdős–Rényi graphs |
+| `figures/network_overview.png` | Full network; node color = genre, edge color = similarity |
+| `figures/layout_comparison.png` | Same giant component drawn with spring, Kamada–Kawai, spectral, and circular layouts |
+| `figures/centrality_histograms.png` | Distribution of every centrality |
+| `figures/centrality_vs_popularity.png` | Every centrality against `track_popularity` |
+| `figures/centrality_correlation_pearson.png` | Pearson correlation of all centralities and popularity |
+| `figures/centrality_correlation_spearman.png` | Spearman correlation of the same metrics |
+| `figures/k_comparison_stats.png` | Basic stats for k = 5, 8, 10, 12, 15 |
+| `figures/k_community_networks.png` | k = 5, 10, 15 networks colored by community |
+| `figures/within_community_stats.png` | Internal density of the largest communities in those three graphs |
+
+Genre breakdowns are tables, not plots: `data/centrality_by_genre.csv` and `data/centrality_popularity_corr_by_genre.csv`.
 
 ## Summary of findings
 
@@ -68,7 +88,7 @@ with EDM standing out as a visually distinct island, while pop, rock, latin, and
 overlap heavily in the middle.
 
 Structurally, the network shows a classic **small-world pattern**: songs clump into
-tight local groups (clustering coefficient ~123x higher than a random network of the
+tight local groups (clustering coefficient ~130x higher than a random network of the
 same size, see **Figure 2**, `figures/degree_distribution.png`, for the degree
 distribution behind this), yet any two songs are still typically only about 8 "similarity
 hops" apart. When we let an algorithm detect communities purely from the network's

@@ -54,7 +54,7 @@ def targeted_attack(G: nx.Graph, checkpoint_step: int = 25, max_fraction: float 
 
 def random_failure(
     G: nx.Graph, checkpoint_step: int = 25, max_fraction: float = 0.9,
-    n_trials: int = 10, seed: int = 42,
+    n_trials: int = 10, seed: int = 6,
 ):
     """Remove nodes in random order, averaged over several trials."""
     n = G.number_of_nodes()

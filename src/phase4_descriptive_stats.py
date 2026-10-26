@@ -4,13 +4,11 @@ Phase 4 - Descriptive network statistics.
 Characterizes the basic structure of the song-similarity network: size,
 degree distribution, clustering, connectivity, and small-world-ness.
 
-Note on isolates: the graph keeps its 38 isolated nodes (songs with no
-mutual top-10 match). They're included in degree/clustering statistics
-(where they legitimately contribute degree=0, clustering=0), but excluded
-from any metric that requires connectivity (average shortest path length,
-diameter, small-world comparison) - those are computed on the giant
-connected component only, which is standard practice for disconnected
-graphs.
+Note on isolates: songs with no mutual top-k match stay in the graph.
+They're included in degree/clustering statistics (degree=0, clustering=0),
+but excluded from metrics that require connectivity (average shortest path
+length, diameter, small-world comparison). Those are computed on the giant
+connected component only.
 """
 
 import networkx as nx
@@ -124,6 +122,72 @@ def small_world_comparison(giant: nx.Graph, n_random: int = 10) -> dict:
     }
 
 
+def plot_er_metric_comparison(sw_stats: dict, path: str = f"{FIGURES_DIR}/er_comparison_metrics.png"):
+    """Bar chart of clustering and path length against an Erdős–Rényi graph."""
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4.2))
+    labels = ["Our network", "Erdős–Rényi"]
+    colors = ["steelblue", "darkorange"]
+
+    c_vals = [sw_stats["C_real"], sw_stats["C_random"]]
+    l_vals = [sw_stats["L_real"], sw_stats["L_random"]]
+    axes[0].bar(labels, c_vals, color=colors)
+    axes[0].set_ylabel("Average clustering coefficient")
+    axes[0].set_title("Clustering")
+    for x, val in enumerate(c_vals):
+        axes[0].text(x, val, f"{val:.3f}", ha="center", va="bottom", fontsize=9)
+
+    axes[1].bar(labels, l_vals, color=colors)
+    axes[1].set_ylabel("Average path length")
+    axes[1].set_title("Path length")
+    for x, val in enumerate(l_vals):
+        axes[1].text(x, val, f"{val:.2f}", ha="center", va="bottom", fontsize=9)
+    axes[0].set_ylim(0, max(c_vals) * 1.18)
+    axes[1].set_ylim(0, max(l_vals) * 1.18)
+
+    fig.suptitle(
+        f"Giant component vs Erdős–Rényi G(n, m)   |   small-world σ = {sw_stats['sigma']:.1f}"
+    )
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    print(f"Saved {path}")
+
+
+def plot_er_degree_overlay(
+    G: nx.Graph, path: str = f"{FIGURES_DIR}/er_degree_distribution.png", n_random: int = 20, seed: int = 6
+):
+    """
+    Overlay our degree distribution on Erdős–Rényi graphs with the same
+    number of nodes and edges. The ER curve is the mean over n_random draws.
+    """
+    n = G.number_of_nodes()
+    m = G.number_of_edges()
+    real = np.bincount([d for _, d in G.degree()])
+
+    er_counts = []
+    max_deg = len(real) - 1
+    for i in range(n_random):
+        R = nx.gnm_random_graph(n, m, seed=seed + i)
+        counts = np.bincount([d for _, d in R.degree()])
+        max_deg = max(max_deg, len(counts) - 1)
+        er_counts.append(counts)
+
+    real = np.pad(real, (0, max_deg + 1 - len(real)))
+    er_mat = np.vstack([np.pad(c, (0, max_deg + 1 - len(c))) for c in er_counts])
+    er_mean = er_mat.mean(axis=0)
+
+    xs = np.arange(max_deg + 1)
+    fig, ax = plt.subplots(figsize=(8, 4.8))
+    ax.bar(xs, real, color="steelblue", alpha=0.75, label="Our network")
+    ax.plot(xs, er_mean, color="darkorange", marker="o", linewidth=2, label=f"Erdős–Rényi mean (n={n_random})")
+    ax.set_xlabel("Degree")
+    ax.set_ylabel("Number of songs")
+    ax.set_title("Degree distribution: our network vs Erdős–Rényi G(n, m)")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    print(f"Saved {path}")
+
+
 if __name__ == "__main__":
     G = load_graph()
     stats, giant = basic_stats(G)
@@ -142,3 +206,6 @@ if __name__ == "__main__":
     sw_stats = small_world_comparison(giant)
     for k, v in sw_stats.items():
         print(f"{k}: {v:.4f}")
+
+    plot_er_metric_comparison(sw_stats)
+    plot_er_degree_overlay(G)

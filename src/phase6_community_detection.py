@@ -29,7 +29,7 @@ def load_graph(path: str = "data/song_network.gexf") -> nx.Graph:
     return nx.read_gexf(path)
 
 
-def detect_communities(G: nx.Graph, seed: int = 42):
+def detect_communities(G: nx.Graph, seed: int = 6):
     communities = louvain_communities(G, weight="weight", seed=seed)
     communities = sorted(communities, key=len, reverse=True)
     mod = modularity(G, communities, weight="weight")
@@ -65,7 +65,7 @@ def evaluate_against_genre(df: pd.DataFrame):
 
 
 def draw_comparison(G: nx.Graph, df: pd.DataFrame, path: str = "figures/community_vs_genre.png"):
-    pos = nx.spring_layout(G, seed=42, k=0.25, iterations=50)
+    pos = nx.spring_layout(G, seed=6, k=0.55, iterations=60)
 
     node_order = list(G.nodes())
     community_of = dict(zip(df["track_id"], df["community"]))

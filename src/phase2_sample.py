@@ -11,7 +11,7 @@ import pandas as pd
 import phase1_load_and_clean as clean_module
 
 SAMPLE_SIZE = 2500
-RANDOM_SEED = 42
+RANDOM_SEED = 6
 
 
 def stratified_sample(
